@@ -34,19 +34,83 @@ require('packer').startup(function(use)
     "ray-x/lsp_signature.nvim",
   }
 
+  -- A code outline window for skimming and quick navigation
    use {
     'stevearc/aerial.nvim',
     config = function() require('aerial').setup({
       -- optionally use on_attach to set keymaps when aerial has attached to a buffer
       on_attach = function(bufnr)
-        -- Jump forwards/backwards with '{' and '}'
-        vim.keymap.set('n', '{', '<cmd>AerialPrev<CR>', {buffer = bufnr})
-        vim.keymap.set('n', '}', '<cmd>AerialNext<CR>', {buffer = bufnr})
+       -- Jump forwards/backwards with '{' and '}'
+      vim.keymap.set('n', '{', '<cmd>AerialPrev<CR>', {buffer = bufnr})
+      vim.keymap.set('n', '}', '<cmd>AerialNext<CR>', {buffer = bufnr})
+      vim.keymap.set('n', 'zz', '<cmd>AerialToggle!<CR>')
+      layout = {
+        -- These control the width of the aerial window.
+        -- They can be integers or a float between 0 and 1 (e.g. 0.4 for 40%)
+        -- min_width and max_width can be a list of mixed types.
+        -- max_width = {40, 0.2} means "the lesser of 40 columns or 20% of total"
+        max_width = { 80, 0.4 },
+        width = nil,
+        min_width = 60,
+        
+        -- key-value pairs of window-local options for aerial window (e.g. winhl)
+        win_opts = {},
+        
+        -- Determines the default direction to open the aerial window. The 'prefer'
+        -- options will open the window in the other direction *if* there is a
+        -- different buffer in the way of the preferred direction
+        -- Enum: prefer_right, prefer_left, right, left, float
+        default_direction = "prefer_right",
+        
+        -- Determines where the aerial window will be opened
+        --   edge   - open aerial at the far right/left of the editor
+        --   window - open aerial to the right/left of the current window
+        placement = "window",
+        
+        -- Preserve window size equality with (:help CTRL-W_=)
+        preserve_equality = false,
+      }
       end
     }) end
   }
   -- You probably also want to set a keymap to toggle aerial
-  vim.keymap.set('n', 'zz', '<cmd>AerialToggle!<CR>')
+
+  -- Test runner for Neovim
+  use {
+    "klen/nvim-test",
+    config = function()
+      require('nvim-test').setup({
+        run = true,                 -- run tests (using for debug)
+        commands_create = true,     -- create commands (TestFile, TestLast, ...)
+        filename_modifier = ":.",   -- modify filenames before tests run(:h filename-modifiers)
+        silent = false,             -- less notifications
+        term = "terminal",          -- a terminal to run ("terminal"|"toggleterm")
+        termOpts = {
+          direction = "float",   -- terminal's direction ("horizontal"|"vertical"|"float")
+          width = 80,               -- terminal's width (for vertical|float)
+          height = 40,              -- terminal's height (for horizontal|float)
+          go_back = false,          -- return focus to original window after executing
+          stopinsert = "auto",      -- exit from insert mode (true|false|"auto")
+          keep_one = true,          -- keep only one terminal for testing
+        },
+        runners = {               -- setup tests runners
+          cs = "nvim-test.runners.dotnet",
+          go = "nvim-test.runners.go-test",
+          haskell = "nvim-test.runners.hspec",
+          javascriptreact = "nvim-test.runners.jest",
+          javascript = "nvim-test.runners.jest",
+          lua = "nvim-test.runners.busted",
+          python = "nvim-test.runners.pytest",
+          ruby = "nvim-test.runners.rspec",
+          rust = "nvim-test.runners.cargo-test",
+          typescript = "nvim-test.runners.jest",
+          typescriptreact = "nvim-test.runners.jest",
+     },
+    }) end
+  }
+
+  vim.keymap.set('n', 'gt', '<cmd>TestNearest<CR>', {desc = '[G]o [T]est Function' })
+  vim.keymap.set('n', 'tf', '<cmd>TestFile<CR>', {desc = '[T]est [F]ile' })
 
   use { -- Autocompletion
     'hrsh7th/nvim-cmp',
@@ -203,14 +267,148 @@ vim.api.nvim_create_autocmd('TextYankPost', {
 
 -- Set lualine as statusline
 -- See `:help lualine.txt`
-require('lualine').setup {
-  options = {
-    icons_enabled = false,
-    theme = 'gruvbox',
-    component_separators = '|',
-    section_separators = '',
-  },
+--require('lualine').setup {
+--  options = {
+--    icons_enabled = false,
+--    theme = 'gruvbox',
+--    component_separators = '|',
+--    section_separators = '',
+--  },
+--}
+
+--======================start lualine config======================================--
+local colors = {
+  red = '#ca1243',
+  grey = '#a0a1a7',
+  black = '#383a42',
+  white = '#f3f3f3',
+  light_green = '#C0E6AC',
+  green = '#181918',
+  orange = '#fe8019',
+  blue = '#2F58CD',
+  light_blue = '#91D8E4',
+  green = '#8ec07c',
+  yellow = '#FFEA20'
 }
+
+local theme = {
+  normal = {
+    a = { fg = colors.green, bg = colors.black },
+    b = { fg = colors.black, bg = colors.light_green },
+    c = { fg = colors.black, bg = colors.blue },
+    z = { fg = colors.red, bg = colors.black },
+  },
+  insert = { a = { fg = colors.black, bg = colors.light_green } },
+  visual = { a = { fg = colors.black, bg = colors.orange } },
+  replace = { a = { fg = colors.black, bg = colors.green } },
+}
+
+local empty = require('lualine.component'):extend()
+function empty:draw(default_highlight)
+  self.status = ''
+  self.applied_separator = ''
+  self:apply_highlights(default_highlight)
+  self:apply_section_separators()
+  return self.status
+end
+
+-- Put proper separators and gaps between components in sections
+local function process_sections(sections)
+  for name, section in pairs(sections) do
+    local left = name:sub(9, 10) < 'x'
+    for pos = 1, name ~= 'lualine_z' and #section or #section - 1 do
+      table.insert(section, pos * 2, { empty, color = { fg = colors.white, bg = colors.white } })
+    end
+    for id, comp in ipairs(section) do
+      if type(comp) ~= 'table' then
+        comp = { comp }
+        section[id] = comp
+      end
+      comp.separator = left and { right = '' } or { left = '' }
+    end
+  end
+  return sections
+end
+
+local function search_result()
+  if vim.v.hlsearch == 0 then
+    return ''
+  end
+  local last_search = vim.fn.getreg('/')
+  if not last_search or last_search == '' then
+    return ''
+  end
+  local searchcount = vim.fn.searchcount { maxcount = 9999 }
+  return last_search .. '(' .. searchcount.current .. '/' .. searchcount.total .. ')'
+end
+
+local function modified()
+  if vim.bo.modified then
+    return '+'
+  elseif vim.bo.modifiable == false or vim.bo.readonly == true then
+    return '-'
+  end
+  return ''
+end
+
+require('lualine').setup ({
+  options = {
+    theme = theme,
+    component_separators = '',
+    section_separators = { left = '', right = '' },
+  },
+  sections = process_sections {
+    lualine_a = { 'mode' },
+    lualine_b = {
+      'branch',
+      'diff',
+      {
+        'diagnostics',
+        source = { 'nvim' },
+        sections = { 'error' },
+        diagnostics_color = { error = { bg = colors.red, fg = colors.white } },
+      },
+      {
+        'diagnostics',
+        source = { 'nvim' },
+        sections = { 'warn' },
+        diagnostics_color = { warn = { bg = colors.orange, fg = colors.white } },
+      },
+      { 'filename', file_status = false, path = 1 },
+      { modified, color = { bg = colors.red } },
+      {
+        '%w',
+        cond = function()
+          return vim.wo.previewwindow
+        end,
+      },
+      {
+        '%r',
+        cond = function()
+          return vim.bo.readonly
+        end,
+      },
+      {
+        '%q',
+        cond = function()
+          return vim.bo.buftype == 'quickfix'
+        end,
+      },
+    },
+    lualine_c = {},
+    lualine_x = {},
+    lualine_y = { search_result, 'filetype' },
+    lualine_z = { '%l:%c', '%p%%/%L' },
+  },
+  inactive_sections = {
+    lualine_c = { '%f %y %m' },
+    lualine_x = {},
+  },
+})
+--======================end lualine config======================================--
+
+
+--#region
 --TQT custom require
 -- Enable Comment.nvim
 require('Comment').setup()
