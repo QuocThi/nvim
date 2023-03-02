@@ -279,24 +279,21 @@ vim.api.nvim_create_autocmd('TextYankPost', {
 --======================start lualine config======================================--
 local colors = {
   red = '#ca1243',
-  grey = '#a0a1a7',
   black = '#383a42',
   white = '#f3f3f3',
   light_green = '#C0E6AC',
   green = '#181918',
   orange = '#fe8019',
-  blue = '#2F58CD',
   light_blue = '#91D8E4',
-  green = '#8ec07c',
   yellow = '#FFEA20'
 }
 
 local theme = {
   normal = {
-    a = { fg = colors.green, bg = colors.black },
+    a = { fg = colors.black, bg = colors.light_green },
     b = { fg = colors.black, bg = colors.light_green },
-    c = { fg = colors.black, bg = colors.blue },
-    z = { fg = colors.red, bg = colors.black },
+    c = { fg = colors.black, bg = colors.light_blue },
+    z = { fg = colors.red, bg = colors.light_blue },
   },
   insert = { a = { fg = colors.black, bg = colors.light_green } },
   visual = { a = { fg = colors.black, bg = colors.orange } },
@@ -366,7 +363,7 @@ require('lualine').setup ({
         'diagnostics',
         source = { 'nvim' },
         sections = { 'error' },
-        diagnostics_color = { error = { bg = colors.red, fg = colors.white } },
+        diagnostics_color = { error = { bg = colors.yellow, fg = colors.white } },
       },
       {
         'diagnostics',
@@ -375,7 +372,7 @@ require('lualine').setup ({
         diagnostics_color = { warn = { bg = colors.orange, fg = colors.white } },
       },
       { 'filename', file_status = false, path = 1 },
-      { modified, color = { bg = colors.red } },
+      { modified, color = { bg = colors.yellow } },
       {
         '%w',
         cond = function()
