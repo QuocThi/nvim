@@ -6,6 +6,14 @@ vim.fn.system { 'git', 'clone', '--depth', '1', 'https://github.com/wbthomason/p
 vim.cmd [[packadd packer.nvim]]
 end
 
+vim.keymap.set("n", "sd" ,function()
+        local line = vim.fn.expand("%:p") .. ":" .. vim.fn.line(".")
+        local command = "echo -n '" .. line .. "' | pbcopy"
+        command = "!" .. vim.fn.escape(command, "!")
+        print(command)
+        vim.fn.execute(command)
+      end)
+
 require('packer').startup(function(use)
   -- Package manager
   use 'wbthomason/packer.nvim'
@@ -279,12 +287,15 @@ vim.api.nvim_create_autocmd('TextYankPost', {
 --======================start lualine config======================================--
 local colors = {
   red = '#ca1243',
+  grey = '#a0a1a7',
   black = '#383a42',
   white = '#f3f3f3',
   light_green = '#C0E6AC',
   green = '#181918',
   orange = '#fe8019',
+  blue = '#2F58CD',
   light_blue = '#91D8E4',
+  green = '#8ec07c',
   yellow = '#FFEA20'
 }
 
@@ -363,7 +374,7 @@ require('lualine').setup ({
         'diagnostics',
         source = { 'nvim' },
         sections = { 'error' },
-        diagnostics_color = { error = { bg = colors.yellow, fg = colors.white } },
+        diagnostics_color = { error = { bg = colors.yellow, fg = colors.red } },
       },
       {
         'diagnostics',
