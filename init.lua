@@ -51,7 +51,7 @@ require('packer').startup(function(use)
        -- Jump forwards/backwards with '{' and '}'
       vim.keymap.set('n', '{', '<cmd>AerialPrev<CR>', {buffer = bufnr})
       vim.keymap.set('n', '}', '<cmd>AerialNext<CR>', {buffer = bufnr})
-      vim.keymap.set('n', 'zz', '<cmd>AerialToggle!<CR>')
+      vim.keymap.set('n', 'gz', '<cmd>AerialToggle!<CR>')
       layout = {
         -- These control the width of the aerial window.
         -- They can be integers or a float between 0 and 1 (e.g. 0.4 for 40%)
@@ -259,8 +259,8 @@ vim.keymap.set('n', 'j', "v:count == 0 ? 'gj' : 'j'", { expr = true, silent = tr
 -- tqt custom vim keymap
 vim.keymap.set('n', ';', '<c-o>', { desc = 'tqt custom keymap for Ctrl + o' })
 vim.keymap.set('n', '\'', '<c-i>', { desc = 'tqt custom keymap for Ctrl + i' })
-vim.keymap.set('n', '.', '<s-$>', { desc = 'tqt custom keymap for Shift + $' })
-vim.keymap.set('n', ',', '<s-^>', { desc = 'tqt custom keymap for Shift + ^' })
+-- vim.keymap.set('n', '.', '<s-$>', { desc = 'tqt custom keymap for Shift + $' })
+-- vim.keymap.set('n', ',', '<s-^>', { desc = 'tqt custom keymap for Shift + ^' })
 
 -- [[ Highlight on yank ]]
 -- See `:help vim.highlight.on_yank()`
@@ -546,7 +546,7 @@ vim.keymap.set('n', '[d', vim.diagnostic.goto_prev)
 vim.keymap.set('n', ']d', vim.diagnostic.goto_next)
 vim.keymap.set('n', '<leader>e', vim.diagnostic.open_float)
 vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist)
-
+vim.keymap.set('n', 'go', vim.diagnostic.open_float)
 -- LSP settings.
 --  This function gets run when an LSP connects to a particular buffer.
 local on_attach = function(_, bufnr)
@@ -659,15 +659,15 @@ cmp.setup {
       behavior = cmp.ConfirmBehavior.Replace,
       select = true,
     },
-    ['<Tab>'] = cmp.mapping(function(fallback)
-      if cmp.visible() then
-        cmp.select_next_item()
-      elseif luasnip.expand_or_jumpable() then
-        luasnip.expand_or_jump()
-      else
-        fallback()
-      end
-    end, { 'i', 's' }),
+--    ['<Tab>'] = cmp.mapping(function(fallback)
+--      if cmp.visible() then
+--        cmp.select_next_item()
+--      elseif luasnip.expand_or_jumpable() then
+--        luasnip.expand_or_jump()
+--      else
+--        fallback()
+--      end
+--    end, { 'i', 's' }),
     ['<S-Tab>'] = cmp.mapping(function(fallback)
       if cmp.visible() then
         cmp.select_prev_item()
